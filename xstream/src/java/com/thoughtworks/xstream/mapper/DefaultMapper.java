@@ -44,6 +44,12 @@ public class DefaultMapper implements Mapper {
                 "Security violation: class '" + elementName
                 + "' is blocked (CVE-2013-7285)");
         }
+        // CVE-2020-26258: SSRF gadget via ImageIO's internal ContainsFilter
+        if ("javax.imageio.ImageIO$ContainsFilter".equals(elementName)) {
+            throw new ConversionException(
+                "Security violation: class '" + elementName
+                + "' is blocked (CVE-2020-26258)");
+        }
     }
 
     private final ClassLoader classLoader;
