@@ -60,6 +60,17 @@
         <module>xstream-distribution</module>
       </modules>
     </profile>
+    <profile>
+      <id>jdk18</id>
+      <activation>
+        <jdk>1.8</jdk>
+      </activation>
+      <modules>
+        <module>xstream</module>
+        <module>xstream-benchmark</module>
+        <module>xstream-distribution</module>
+      </modules>
+    </profile>
   </profiles>
 
   <licenses>
@@ -397,13 +408,7 @@
         </configuration>
       </plugin>
     </plugins>
-    <extensions>
-      <extension>
-        <groupId>org.apache.maven.wagon</groupId>
-        <artifactId>wagon-webdav</artifactId>
-        <version>1.0-beta-2</version>
-      </extension>
-    </extensions>
+    <!-- wagon-webdav extension removed: Codehaus is defunct, WebDAV deployment not needed -->
   </build>
 
   <distributionManagement>
