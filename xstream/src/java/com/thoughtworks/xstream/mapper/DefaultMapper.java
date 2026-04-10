@@ -50,6 +50,15 @@ public class DefaultMapper implements Mapper {
                 "Security violation: class '" + elementName
                 + "' is blocked (CVE-2020-26258)");
         }
+        // CVE-2021-39144: RCE gadget chain via RMI activation, Nashorn engine,
+        //                 and sun.tracing infrastructure classes
+        if ("java.rmi.activation.ActivationDesc".equals(elementName)
+                || "jdk.nashorn.internal.objects.NativeString".equals(elementName)
+                || elementName.startsWith("sun.tracing.")) {
+            throw new ConversionException(
+                "Security violation: class '" + elementName
+                + "' is blocked (CVE-2021-39144)");
+        }
     }
 
     private final ClassLoader classLoader;
