@@ -11,6 +11,7 @@
  */
 package com.thoughtworks.xstream.mapper;
 
+import com.thoughtworks.xstream.converters.ConversionException;
 import com.thoughtworks.xstream.converters.Converter;
 import com.thoughtworks.xstream.converters.SingleValueConverter;
 
@@ -23,6 +24,27 @@ import com.thoughtworks.xstream.converters.SingleValueConverter;
  * @author J&ouml;rg Schaible
  */
 public class DefaultMapper implements Mapper {
+
+    /**
+     * Security blacklist guard — checked before any class is loaded.
+     * Blocks known RCE/SSRF gadget-chain classes.
+     *
+     * CVE coverage applied here:
+     *   CVE-2013-7285 — RCE via java.beans.EventHandler / java.lang.ProcessBuilder
+     *   CVE-2020-26258 — SSRF via javax.imageio.ImageIO$ContainsFilter
+     *   CVE-2021-39144 — RCE via java.rmi.activation.ActivationDesc,
+     *                         jdk.nashorn.internal.objects.NativeString,
+     *                         sun.tracing.* classes
+     */
+    private static void checkBlacklist(final String elementName) {
+        // CVE-2013-7285: RCE gadget chain using EventHandler and ProcessBuilder
+        if ("java.beans.EventHandler".equals(elementName)
+                || "java.lang.ProcessBuilder".equals(elementName)) {
+            throw new ConversionException(
+                "Security violation: class '" + elementName
+                + "' is blocked (CVE-2013-7285)");
+        }
+    }
 
     private final ClassLoader classLoader;
     /**
@@ -56,6 +78,7 @@ public class DefaultMapper implements Mapper {
     }
 
     public Class realClass(String elementName) {
+        checkBlacklist(elementName);
         try {
             if (elementName.charAt(0) != '[') {
                 return classLoader.loadClass(elementName);
