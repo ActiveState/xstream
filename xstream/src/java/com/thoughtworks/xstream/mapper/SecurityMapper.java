@@ -92,8 +92,28 @@ public class SecurityMapper extends MapperWrapper {
         }
     }
 
+    /**
+     * Security blacklist guard checked at the class-name level, before any class is loaded.
+     * Blocks known RCE gadget-chain classes regardless of the configured TypePermission list.
+     *
+     * CVE coverage:
+     *   CVE-2021-39144 — RCE via java.rmi.activation.ActivationDesc,
+     *                         jdk.nashorn.internal.objects.NativeString,
+     *                         sun.tracing.* infrastructure classes
+     */
+    private static void checkCVE_2021_39144(final String elementName) {
+        if ("java.rmi.activation.ActivationDesc".equals(elementName)
+                || "jdk.nashorn.internal.objects.NativeString".equals(elementName)
+                || elementName.startsWith("sun.tracing.")) {
+            throw new ConversionException(
+                "Security violation: class '" + elementName
+                + "' is blocked (CVE-2021-39144)");
+        }
+    }
+
     public Class realClass(final String elementName) {
         checkCVE_2020_26258(elementName);
+        checkCVE_2021_39144(elementName);
         final Class type = super.realClass(elementName);
         for (int i = 0; i < permissions.size(); ++i) {
             final TypePermission permission = (TypePermission)permissions.get(i);
