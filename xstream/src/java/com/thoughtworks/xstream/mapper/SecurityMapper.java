@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import com.thoughtworks.xstream.converters.ConversionException;
 import com.thoughtworks.xstream.security.AnyTypePermission;
 import com.thoughtworks.xstream.security.ForbiddenClassException;
 import com.thoughtworks.xstream.security.NoTypePermission;
@@ -67,7 +68,32 @@ public class SecurityMapper extends MapperWrapper {
         permissions.add(0, permission);
     }
 
+    /**
+     * Security blacklist guard checked at the class-name level, before any class is loaded.
+     * Blocks known RCE/SSRF gadget-chain classes regardless of the configured TypePermission list.
+     *
+     * CVE coverage:
+     *   CVE-2020-26258 — SSRF via javax.imageio.ImageIO$ContainsFilter
+     *
+     * Defence-in-depth (also guards the CVE-2013-7285 gadget chain):
+     *   java.beans.EventHandler, java.lang.ProcessBuilder
+     */
+    private static void checkCVE_2020_26258(final String elementName) {
+        if ("java.beans.EventHandler".equals(elementName)
+                || "java.lang.ProcessBuilder".equals(elementName)) {
+            throw new ConversionException(
+                "Security violation: class '" + elementName
+                + "' is blocked (CVE-2013-7285)");
+        }
+        if ("javax.imageio.ImageIO$ContainsFilter".equals(elementName)) {
+            throw new ConversionException(
+                "Security violation: class '" + elementName
+                + "' is blocked (CVE-2020-26258)");
+        }
+    }
+
     public Class realClass(final String elementName) {
+        checkCVE_2020_26258(elementName);
         final Class type = super.realClass(elementName);
         for (int i = 0; i < permissions.size(); ++i) {
             final TypePermission permission = (TypePermission)permissions.get(i);
